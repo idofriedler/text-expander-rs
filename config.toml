@@ -1,0 +1,6 @@
+# Text Expander Configuration
+
+
+[shortcuts]
+hello = "hello world"
+google = "www.google.com"
