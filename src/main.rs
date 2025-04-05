@@ -11,6 +11,7 @@ mod listener;
 mod expander;
 
 use eframe::egui;
+use egui::{Color32, RichText};
 
 struct AppUI {
     is_enabled: Arc<AtomicBool>,
@@ -36,9 +37,13 @@ impl eframe::App for AppUI {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             let currently_enabled = self.is_enabled.load(Ordering::Relaxed);
-            let button_text = if currently_enabled { "✅ Enabled" } else { "❌ Disabled" };
+            let button_label = if currently_enabled {
+                RichText::new("ON").color(Color32::GREEN)
+            } else {
+                RichText::new("OFF").color(Color32::RED)
+            };
 
-            if ui.button(button_text).clicked() {
+            if ui.button(button_label).clicked() {
                 self.is_enabled.store(!currently_enabled, Ordering::Relaxed);
                 log::info!("Toggled expander to {}", !currently_enabled);
             }
