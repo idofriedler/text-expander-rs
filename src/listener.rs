@@ -1,10 +1,10 @@
 use rdev::{listen, EventType, Key};
 use std::collections::{HashMap, HashSet};
-use std::sync::{atomic::{AtomicBool, Ordering}, Arc};
+use std::sync::{atomic::{AtomicBool, Ordering}, Arc, Mutex};
 use crate::expander::Expander;
 
-pub fn start_listening(shortcuts: HashMap<String, String>, is_enabled: Arc<AtomicBool>) {
-    let mut expander = Expander::new(shortcuts);
+pub fn start_listening(shortcuts: Arc<Mutex<HashMap<String, String>>>, is_enabled: Arc<AtomicBool>) {
+    let mut expander = Expander::new(HashMap::new());
     let mut modifiers: HashSet<Key> = HashSet::new();
 
     if let Err(e) = listen(move |event| {
@@ -14,7 +14,11 @@ pub fn start_listening(shortcuts: HashMap<String, String>, is_enabled: Arc<Atomi
                     return;
                 }
                 modifiers.insert(key);
-                expander.key_pressed(key);
+                // 🔁 Get current shortcuts from shared map
+                if let Ok(map) = shortcuts.lock() {
+                    expander.set_shortcuts(map.clone());
+                    expander.key_pressed(key);
+                }
             }
             EventType::KeyRelease(key) => {
                 modifiers.remove(&key);

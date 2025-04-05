@@ -73,6 +73,11 @@ impl Expander {
             //println!("Typed buffer: '{}'", typed); // Optional debug
         }
     }
+
+    pub fn set_shortcuts(&mut self, shortcuts: HashMap<String, String>) {
+        self.shortcuts = shortcuts;
+    }
+    
 }
 
 fn key_to_char(key: Key) -> Option<char> {

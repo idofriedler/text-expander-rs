@@ -2,7 +2,7 @@ use simplelog::*;
 use std::collections::HashMap;
 use std::{
     fs::File,
-    sync::{atomic::{AtomicBool, Ordering}, Arc},
+    sync::{atomic::{AtomicBool, Ordering}, Arc, Mutex},
     thread,
 };
 
@@ -14,12 +14,20 @@ use eframe::egui;
 
 struct AppUI {
     is_enabled: Arc<AtomicBool>,
-    shortcuts: HashMap<String, String>,
+    shortcuts: Arc<Mutex<HashMap<String, String>>>,
+    new_key: String,
+    new_value: String,
+
 }
 
 impl AppUI {
-    fn new(is_enabled: Arc<AtomicBool>, shortcuts: HashMap<String, String>) -> Self {
-        Self { is_enabled, shortcuts }
+    fn new(is_enabled: Arc<AtomicBool>, shortcuts: Arc<Mutex<HashMap<String, String>>> ) -> Self {
+        Self {
+            is_enabled,
+            shortcuts,
+            new_key: String::new(),
+            new_value: String::new(),
+        }
     }
 }
 
@@ -38,19 +46,54 @@ impl eframe::App for AppUI {
             ui.separator();
             ui.heading("📋 Shortcuts");
 
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                for (key, value) in &self.shortcuts {
-                    ui.horizontal(|ui| {
-                        ui.monospace(format!("{} → {}", key, value));
-                    });
-                }
+            // ✅ Lock the mutex before accessing
+            if let Ok(map) = self.shortcuts.lock() {
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    for (key, value) in map.iter() {
+                        ui.horizontal(|ui| {
+                            ui.monospace(format!("{} → {}", key, value));
+                        });
+                    }
+                });
+            } else {
+                ui.label("⚠️ Failed to load shortcuts (lock error)");
+            }
+
+
+
+            ui.separator();
+            ui.heading("➕ Add New Shortcut");
+
+            ui.horizontal(|ui| {
+                ui.label("Shortcut:");
+                ui.text_edit_singleline(&mut self.new_key);
             });
+
+            ui.horizontal(|ui| {
+                ui.label("Expansion:");
+                ui.text_edit_singleline(&mut self.new_value);
+            });
+
+            if ui.button("💾 Save").clicked() {
+                if !self.new_key.is_empty() && !self.new_value.is_empty() {
+                    if let Ok(mut map) = self.shortcuts.lock() {
+                        map.insert(self.new_key.clone(), self.new_value.clone());
+                        if let Err(e) = save_shortcuts_to_file(&map) {
+                            log::error!("Failed to save shortcuts: {}", e);
+                        } else {
+                            log::info!("Added shortcut: {} → {}", self.new_key, self.new_value);
+                            self.new_key.clear();
+                            self.new_value.clear();
+                        }
+                    }
+                }
+            }
         });
     }
 }
 
 
-fn main() -> Result<(), eframe::Error> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     CombinedLogger::init(vec![
         WriteLogger::new(
             LevelFilter::Info,
@@ -61,12 +104,13 @@ fn main() -> Result<(), eframe::Error> {
     .unwrap();
 
     log::info!("Text Expander started.");
-    let shortcuts = config::load_shortcuts("/home/ido/learn_rust/shortcuts.txt")
-        .expect("Failed to load shortcuts.");
+    let shortcuts: Arc<Mutex<HashMap<String, String>>> =
+    Arc::new(Mutex::new(config::load_shortcuts("/home/ido/learn_rust/shortcuts.txt")?));
+
 
     let is_enabled = Arc::new(AtomicBool::new(true)); // Shared toggle
     let thread_enabled = Arc::clone(&is_enabled);
-    let thread_shortcuts = shortcuts.clone();
+    let thread_shortcuts = Arc::clone(&shortcuts);
 
     // Run listener in background
     thread::spawn(move || {
@@ -77,9 +121,21 @@ fn main() -> Result<(), eframe::Error> {
 
     // Launch GUI
     let options = eframe::NativeOptions::default();
-    eframe::run_native(
+    Ok(eframe::run_native(
         "Text Expander",
         options,
         Box::new(|_cc| Box::new(AppUI::new(is_enabled, shortcuts))),
-    )
+    )?)
+}
+
+
+
+fn save_shortcuts_to_file(map: &HashMap<String, String>) -> std::io::Result<()> {
+    use std::io::Write;
+
+    let mut file = File::create("/home/ido/learn_rust/shortcuts.txt")?;
+    for (k, v) in map {
+        writeln!(file, "{}:{}", k, v)?;
+    }
+    Ok(())
 }
