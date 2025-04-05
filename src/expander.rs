@@ -2,6 +2,7 @@ use std::collections::{HashMap, VecDeque};
 use std::{thread, time::Duration};
 
 use rdev::{simulate, EventType, Key};
+use rdev::Key::*;
 
 pub struct Expander {
     shortcuts: HashMap<String, String>,
@@ -19,7 +20,7 @@ impl Expander {
         }
     }
 
-    pub fn key_pressed(&mut self, key: Key) {
+    pub fn key_pressed(&mut self, key: Key, shift: bool) {
         // Step 1: Handle Tab press
         if key == Key::Tab {
             let typed: String = self.buffer.iter().collect();
@@ -30,6 +31,7 @@ impl Expander {
 
                     // Delete shortcut + tab
                     for _ in 0..(shortcut.len() + 1) {
+                        log::debug!("Backspacing {} characters for shortcut '{}'", shortcut.len(), shortcut);
                         simulate(&EventType::KeyPress(Key::Backspace)).ok();
                         thread::sleep(Duration::from_millis(5));
                         simulate(&EventType::KeyRelease(Key::Backspace)).ok();
@@ -38,6 +40,7 @@ impl Expander {
 
                     // Type the expansion
                     for ch in expansion.chars() {
+                        log::debug!("Typing char: '{}'", ch);
                         if let Some(k) = char_to_key(ch) {
                             simulate(&EventType::KeyPress(k)).ok();
                             thread::sleep(Duration::from_millis(5));
@@ -45,7 +48,8 @@ impl Expander {
                             
                         }
                     }
-
+                    
+                    log::debug!("Expansion complete. Clearing buffer.");
                     self.buffer.clear();
                     return;
                 }
@@ -63,14 +67,13 @@ impl Expander {
         }
 
         // Step 2: Build the typed buffer (only for printable keys)
-        if let Some(c) = key_to_char(key) {
+        if let Some(c) = key_to_char(key, shift) {
             if self.buffer.len() == self.max_shortcut_length {
                 self.buffer.pop_front();
             }
             self.buffer.push_back(c);
 
-            //let typed: String = self.buffer.iter().collect();
-            //println!("Typed buffer: '{}'", typed); // Optional debug
+            log::debug!("Buffer updated: \"{}\"", self.buffer.iter().collect::<String>());
         }
     }
 
@@ -79,8 +82,9 @@ impl Expander {
     }
     
 }
-
-fn key_to_char(key: Key) -> Option<char> {
+/* 
+fn key_to_char(key: Key, shift: bool) -> Option<char> {
+    use rdev::Key::*;
     match key {
         Key::KeyA => Some('a'), Key::KeyB => Some('b'), Key::KeyC => Some('c'),
         Key::KeyD => Some('d'), Key::KeyE => Some('e'), Key::KeyF => Some('f'),
@@ -104,7 +108,7 @@ fn key_to_char(key: Key) -> Option<char> {
         _ => None,
     }
 }
-
+ */
 fn char_to_key(c: char) -> Option<Key> {
     match c {
         'a' | 'A' => Some(Key::KeyA),
@@ -149,4 +153,60 @@ fn char_to_key(c: char) -> Option<Key> {
         '/' => Some(Key::Slash),
         _ => None,
     }
+}
+
+
+fn key_to_char(key: Key, shift: bool) -> Option<char> {
+    Some(match key {
+        KeyA => if shift { 'A' } else { 'a' },
+        KeyB => if shift { 'B' } else { 'b' },
+        KeyC => if shift { 'C' } else { 'c' },
+        KeyD => if shift { 'D' } else { 'd' },
+        KeyE => if shift { 'E' } else { 'e' },
+        KeyF => if shift { 'F' } else { 'f' },
+        KeyG => if shift { 'G' } else { 'g' },
+        KeyH => if shift { 'H' } else { 'h' },
+        KeyI => if shift { 'I' } else { 'i' },
+        KeyJ => if shift { 'J' } else { 'j' },
+        KeyK => if shift { 'K' } else { 'k' },
+        KeyL => if shift { 'L' } else { 'l' },
+        KeyM => if shift { 'M' } else { 'm' },
+        KeyN => if shift { 'N' } else { 'n' },
+        KeyO => if shift { 'O' } else { 'o' },
+        KeyP => if shift { 'P' } else { 'p' },
+        KeyQ => if shift { 'Q' } else { 'q' },
+        KeyR => if shift { 'R' } else { 'r' },
+        KeyS => if shift { 'S' } else { 's' },
+        KeyT => if shift { 'T' } else { 't' },
+        KeyU => if shift { 'U' } else { 'u' },
+        KeyV => if shift { 'V' } else { 'v' },
+        KeyW => if shift { 'W' } else { 'w' },
+        KeyX => if shift { 'X' } else { 'x' },
+        KeyY => if shift { 'Y' } else { 'y' },
+        KeyZ => if shift { 'Z' } else { 'z' },
+        Space => ' ',
+        Return => '\n',
+        Tab => '\t',
+        Num1 => if shift { '!' } else { '1' },
+        Num2 => if shift { '@' } else { '2' },
+        Num3 => if shift { '#' } else { '3' },
+        Num4 => if shift { '$' } else { '4' },
+        Num5 => if shift { '%' } else { '5' },
+        Num6 => if shift { '^' } else { '6' },
+        Num7 => if shift { '&' } else { '7' },
+        Num8 => if shift { '*' } else { '8' },
+        Num9 => if shift { '(' } else { '9' },
+        Num0 => if shift { ')' } else { '0' },
+        Minus => if shift { '_' } else { '-' },
+        Equal => if shift { '+' } else { '=' },
+        LeftBracket => if shift { '{' } else { '[' },
+        RightBracket => if shift { '}' } else { ']' },
+        BackSlash => if shift { '|' } else { '\\' },
+        SemiColon => if shift { ':' } else { ';' },
+        Quote => if shift { '"' } else { '\'' },
+        Comma => if shift { '<' } else { ',' },
+        Dot => if shift { '>' } else { '.' },
+        Slash => if shift { '?' } else { '/' },
+        _ => return None,
+    })
 }

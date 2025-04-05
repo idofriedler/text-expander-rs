@@ -17,7 +17,8 @@ pub fn start_listening(shortcuts: Arc<Mutex<HashMap<String, String>>>, is_enable
                 // 🔁 Get current shortcuts from shared map
                 if let Ok(map) = shortcuts.lock() {
                     expander.set_shortcuts(map.clone());
-                    expander.key_pressed(key);
+                    let shift = modifiers.contains(&Key::ShiftLeft) || modifiers.contains(&Key::ShiftRight);
+                    expander.key_pressed(key, shift);
                 }
             }
             EventType::KeyRelease(key) => {

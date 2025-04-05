@@ -78,6 +78,12 @@ impl eframe::App for AppUI {
                 if !self.new_key.is_empty() && !self.new_value.is_empty() {
                     if let Ok(mut map) = self.shortcuts.lock() {
                         map.insert(self.new_key.clone(), self.new_value.clone());
+                        log::info!(
+                            "✅ New shortcut added: '{}' → '{}'. Total shortcuts: {}",
+                            self.new_key,
+                            self.new_value,
+                            map.len()
+                        );
                         if let Err(e) = save_shortcuts_to_file(&map) {
                             log::error!("Failed to save shortcuts: {}", e);
                         } else {
@@ -107,7 +113,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shortcuts: Arc<Mutex<HashMap<String, String>>> =
     Arc::new(Mutex::new(config::load_shortcuts("/home/ido/learn_rust/shortcuts.txt")?));
 
-
+    if let Ok(map) = shortcuts.lock() {
+        log::info!("📋 Loaded {} shortcut(s) from file:", map.len());
+    
+        for (k, v) in map.iter() {
+            log::info!("• '{}' → '{}'", k, v);
+        }
+    } else {
+        log::warn!("⚠️ Failed to acquire lock to print loaded shortcuts");
+    }
+    
     let is_enabled = Arc::new(AtomicBool::new(true)); // Shared toggle
     let thread_enabled = Arc::clone(&is_enabled);
     let thread_shortcuts = Arc::clone(&shortcuts);
