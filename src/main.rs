@@ -45,6 +45,8 @@ impl eframe::App for AppUI {
 
             ui.separator();
             ui.heading("📋 Shortcuts");
+            
+            let mut to_remove: Option<String> = None;
 
             // ✅ Lock the mutex before accessing
             if let Ok(map) = self.shortcuts.lock() {
@@ -52,6 +54,9 @@ impl eframe::App for AppUI {
                     for (key, value) in map.iter() {
                         ui.horizontal(|ui| {
                             ui.monospace(format!("{} → {}", key, value));
+                            if ui.button("❌").clicked() {
+                                to_remove = Some(key.clone());
+                            }
                         });
                     }
                 });
@@ -59,6 +64,16 @@ impl eframe::App for AppUI {
                 ui.label("⚠️ Failed to load shortcuts (lock error)");
             }
 
+            if let Some(key) = to_remove {
+                if let Ok(mut map) = self.shortcuts.lock() {
+                    if map.remove(&key).is_some() {
+                        log::info!("🗑️ Removed shortcut '{}'", key);
+                        if let Err(e) = save_shortcuts_to_file(&map) {
+                            log::warn!("⚠️ Failed to save shortcuts after deletion: {}", e);
+                        }
+                    }
+                }
+            }
 
 
             ui.separator();
