@@ -14,7 +14,18 @@ where
         if let Some((key, value)) = line.split_once(':') {
             shortcuts.insert(key.trim().to_string(), value.trim().to_string());
         }
-    }
+    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
 
     Ok(shortcuts)
+}
+
+
+pub fn save_shortcuts_to_file(map: &HashMap<String, String>) -> std::io::Result<()> {
+    use std::io::Write;
+
+    let mut file = fs::File::create("/home/ido/learn_rust/shortcuts.txt")?;
+    for (k, v) in map {
+        writeln!(file, "{}:{}", k, v)?;
+    }
+    Ok(())
 }
