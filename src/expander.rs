@@ -1,3 +1,4 @@
+
 use std::collections::{HashMap, VecDeque};
 use std::{thread, time::Duration};
 
@@ -21,94 +22,112 @@ impl Expander {
     }
 
     pub fn key_pressed(&mut self, key: Key, shift: bool) {
-        // Step 1: Handle Tab press
-        if key == Key::Tab {
-            let typed: String = self.buffer.iter().collect();
-            for (shortcut, expansion) in &self.shortcuts {
-                if typed.ends_with(shortcut) {
-                    log::info!("🚀 Shortcut matched with TAB: '{}'", shortcut);
-                    log::info!("📝 Expansion: '{}'", expansion);
+    use std::time::Instant;
 
-                    // Delete shortcut + tab
-                    for _ in 0..(shortcut.len() + 1) {
-                        log::debug!("Backspacing {} characters for shortcut '{}'", shortcut.len(), shortcut);
-                        simulate(&EventType::KeyPress(Key::Backspace)).ok();
-                        thread::sleep(Duration::from_millis(5));
-                        simulate(&EventType::KeyRelease(Key::Backspace)).ok();
-                        
-                    }
+    // Log every key to char conversion
+    if let Some(c) = key_to_char(key, shift) {
+        log::debug!("Key pressed: {:?}, shift: {}, resolved char: '{}'", key, shift, c);
+    } else {
+        log::debug!("Key pressed: {:?}, shift: {}, but no valid char", key, shift);
+    }
 
-                    // Type the expansion
-                    for ch in expansion.chars() {
-                        log::debug!("Typing char: '{}'", ch);
-                        if let Some(k) = char_to_key(ch) {
-                            simulate(&EventType::KeyPress(k)).ok();
-                            thread::sleep(Duration::from_millis(5));
-                            simulate(&EventType::KeyRelease(k)).ok();
-                            
-                        }
-                    }
-                    
-                    log::debug!("Expansion complete. Clearing buffer.");
-                    self.buffer.clear();
-                    return;
-                }
-            }
-
-            // No match: just type a regular tab
-            //simulate(&EventType::KeyPress(Key::Tab)).ok();
-            //thread::sleep(Duration::from_millis(10)); // <== add this delay
-            //simulate(&EventType::KeyRelease(Key::Tab)).ok();
-            //thread::sleep(Duration::from_millis(5));
-            // No shortcut match — just let the user's real Tab happen (do nothing)
-            self.buffer.clear(); // Clear buffer anyway to avoid false positives
-
+    // Handle Tab (expansion trigger)
+    if key == Key::Tab {
+        let typed: String = self.buffer.iter().collect();
+        log::info!("🔍 Buffer before Tab: '{}'", typed);
+        /*
+        if typed.ends_with("!testback") {
+            log::info!("🚀 Triggered test shortcut '!testback'");
+            self.run_backspace_typing_test();
+            self.buffer.clear();
             return;
         }
+         */
+        for (shortcut, expansion) in &self.shortcuts {
+            if typed.ends_with(shortcut) {
+                log::info!("✅ Shortcut matched: '{}'", shortcut);
+                log::info!("➡️ Will expand to: '{}'", expansion);
 
-        // Step 2: Build the typed buffer (only for printable keys)
-        if let Some(c) = key_to_char(key, shift) {
-            if self.buffer.len() == self.max_shortcut_length {
-                self.buffer.pop_front();
+                let chars_to_delete = shortcut.len() + 1; // +1 for Tab itself
+                log::info!("⌫ Will send {} backspaces", chars_to_delete);
+
+                let start = Instant::now();
+                for i in 0..chars_to_delete {
+                    simulate(&EventType::KeyPress(Key::Backspace)).ok();
+                    thread::sleep(Duration::from_millis(20));
+                    simulate(&EventType::KeyRelease(Key::Backspace)).ok();
+                    log::debug!("⌫ Sent backspace {}/{}", i + 1, chars_to_delete);
+                }
+                log::debug!("⌫ Backspacing took {:?}", start.elapsed());
+
+                for ch in expansion.chars() {
+                    if let Some(k) = char_to_key(ch) {
+                        simulate(&EventType::KeyPress(k)).ok();
+                        thread::sleep(Duration::from_millis(20));
+                        simulate(&EventType::KeyRelease(k)).ok();
+                        log::debug!("⌨️ Typed '{}'", ch);
+                    } else {
+                        log::warn!("⚠️ Could not convert '{}' to key", ch);
+                    }
+                }
+
+                log::info!("✅ Expansion complete, clearing buffer");
+                self.buffer.clear();
+                return;
             }
-            self.buffer.push_back(c);
-
-            log::debug!("Buffer updated: \"{}\"", self.buffer.iter().collect::<String>());
         }
+
+        log::info!("❌ No shortcut matched for '{}', clearing buffer", typed);
+        self.buffer.clear();
+        return;
     }
+
+    // Regular character input
+    if let Some(c) = key_to_char(key, shift) {
+        if self.buffer.len() == self.max_shortcut_length {
+            self.buffer.pop_front();
+        }
+        self.buffer.push_back(c);
+        log::debug!("🧠 Buffer updated: \"{}\"", self.buffer.iter().collect::<String>());
+    }
+}
 
     pub fn set_shortcuts(&mut self, shortcuts: HashMap<String, String>) {
         self.shortcuts = shortcuts;
     }
     
-}
-/* 
-fn key_to_char(key: Key, shift: bool) -> Option<char> {
-    use rdev::Key::*;
-    match key {
-        Key::KeyA => Some('a'), Key::KeyB => Some('b'), Key::KeyC => Some('c'),
-        Key::KeyD => Some('d'), Key::KeyE => Some('e'), Key::KeyF => Some('f'),
-        Key::KeyG => Some('g'), Key::KeyH => Some('h'), Key::KeyI => Some('i'),
-        Key::KeyJ => Some('j'), Key::KeyK => Some('k'), Key::KeyL => Some('l'),
-        Key::KeyM => Some('m'), Key::KeyN => Some('n'), Key::KeyO => Some('o'),
-        Key::KeyP => Some('p'), Key::KeyQ => Some('q'), Key::KeyR => Some('r'),
-        Key::KeyS => Some('s'), Key::KeyT => Some('t'), Key::KeyU => Some('u'),
-        Key::KeyV => Some('v'), Key::KeyW => Some('w'), Key::KeyX => Some('x'),
-        Key::KeyY => Some('y'), Key::KeyZ => Some('z'),
-        Key::Num0 => Some('0'), Key::Num1 => Some('1'), Key::Num2 => Some('2'),
-        Key::Num3 => Some('3'), Key::Num4 => Some('4'), Key::Num5 => Some('5'),
-        Key::Num6 => Some('6'), Key::Num7 => Some('7'), Key::Num8 => Some('8'),
-        Key::Num9 => Some('9'),
-        Key::Space => Some(' '),
-        Key::Minus => Some('-'),
-        Key::Slash => Some('/'),
-        Key::Dot => Some('.'),
-        Key::Comma => Some(','),
-        Key::BackQuote => Some('`'),
-        _ => None,
+
+    /* 
+    fn run_backspace_typing_test(&self) {
+        log::info!("🔬 Running in-app backspace+typing test...");
+
+        for i in 0..5 {
+            simulate(&EventType::KeyPress(Key::Backspace)).ok();
+            thread::sleep(Duration::from_millis(10));
+            simulate(&EventType::KeyRelease(Key::Backspace)).ok();
+            thread::sleep(Duration::from_millis(10));
+            log::debug!("Sent backspace {}", i);
+        }
+
+        let text = "hello";
+        for ch in text.chars() {
+            if let Some(key) = char_to_key(ch) {
+                simulate(&EventType::KeyPress(key)).ok();
+                thread::sleep(Duration::from_millis(10));
+                simulate(&EventType::KeyRelease(key)).ok();
+                thread::sleep(Duration::from_millis(10));
+                log::debug!("Typed char '{}'", ch);
+            } else {
+                log::warn!("No key mapping for char '{}'", ch);
+            }
+        }
+
+        log::info!("✅ Test complete.");
     }
+    */
+
 }
- */
+
 fn char_to_key(c: char) -> Option<Key> {
     match c {
         'a' | 'A' => Some(Key::KeyA),
