@@ -15,6 +15,7 @@ fn main() -> Result<(), eframe::Error> {
     let (data_dir, state_dir) = config::setup_paths();
 
     let log_path = state_dir.join("text_expander.log");
+    println!("🪵 Logging to: {}", log_path.display());
     CombinedLogger::init(vec![WriteLogger::new(
         LevelFilter::Debug,
         Config::default(),
