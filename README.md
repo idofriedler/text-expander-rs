@@ -39,7 +39,7 @@ chmod +x install.sh
 
 ## 🪟 Windows
 
-1. **Download** `text_expander_windows.zip` from the [Releases](https://github.com/idofriedler/text-expander/releases)
+1. **Download** `text_expander_windows.zip` from the [Releases](https://github.com/idofriedler/text-expander-rs/tree/main/releases)
 
 2. **Extract** the archive anywhere (e.g., Desktop or Program Files)
 
