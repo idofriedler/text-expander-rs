@@ -25,13 +25,16 @@ A lightweight desktop tool that lets you type shortcuts and automatically expand
    ```bash
    git clone https://github.com/your-username/text_expander.git
    cd text_expander
-
+   ```
 2. **Download the Linux release zip**
 
     Find the latest zip file from the Releases section
 
 3. **Run the install script**
-
+```bash
+chmod +x install.sh
+./install.sh
+```
 4. **Open your app menu and launch Text Expander**
 
 ## 🪟 Windows
