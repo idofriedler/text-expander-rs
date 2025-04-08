@@ -1,32 +1,23 @@
 @echo off
 setlocal
 
-set APP_NAME=Text Expander
-set EXE_NAME=text_expander.exe
-set ICO_NAME=text_expander.ico
-set INSTALL_DIR=%LOCALAPPDATA%\TextExpander
-set SHORTCUT_PATH=%USERPROFILE%\Desktop\TextExpander.lnk
+echo ╔════════════════════════════════════╗
+echo ║     Installing Text Expander       ║
+echo ╚════════════════════════════════════╝
 
-echo 🛠️ Installing %APP_NAME%...
+REM Set install path
+set INSTALL_DIR=%USERPROFILE%\AppData\Local\TextExpander
 
-:: Create install directory
-if not exist "%INSTALL_DIR%" (
-    mkdir "%INSTALL_DIR%"
-)
+REM Create install folder
+mkdir "%INSTALL_DIR%" >nul 2>&1
 
-:: Copy files to install directory
-copy /Y "%~dp0%EXE_NAME%" "%INSTALL_DIR%"
-copy /Y "%~dp0%ICO_NAME%" "%INSTALL_DIR%"
+REM Copy files
+copy text_expander.exe "%INSTALL_DIR%"
+copy text_expander.ico "%INSTALL_DIR%"
 
-:: Create shortcut on desktop using PowerShell
-powershell -Command ^
-  "$s = (New-Object -COM WScript.Shell).CreateShortcut('%SHORTCUT_PATH%'); ^
-   $s.TargetPath = '%INSTALL_DIR%\%EXE_NAME%'; ^
-   $s.IconLocation = '%INSTALL_DIR%\%ICO_NAME%'; ^
-   $s.Save()"
+REM Create desktop shortcut using PowerShell
+powershell -Command "$s = (New-Object -ComObject WScript.Shell).CreateShortcut('%USERPROFILE%\Desktop\TextExpander.lnk'); $s.TargetPath = '%INSTALL_DIR%\text_expander.exe'; $s.IconLocation = '%INSTALL_DIR%\text_expander.ico'; $s.Save()"
 
-echo ✅ %APP_NAME% installed successfully!
-echo 📌 Shortcut created on your desktop.
-
+echo 🟢 Text Expander installed successfully!
+echo 🖥️  Shortcut created on your desktop.
 pause
-
