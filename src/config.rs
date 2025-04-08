@@ -1,31 +1,37 @@
+// config.rs
 use std::{collections::HashMap, fs, path::Path};
 
-pub fn load_shortcuts<P>(path: P) -> Result<HashMap<String, String>, Box<dyn std::error::Error>>
-where
-    P: AsRef<Path>,
-{
-    let content = fs::read_to_string(path)?;
-    let mut shortcuts = HashMap::new();
-
-    for line in content.lines() {
-        if line.trim().is_empty() || line.starts_with('#') {
-            continue;
-        }
-        if let Some((key, value)) = line.split_once(':') {
-            shortcuts.insert(key.trim().to_string(), value.trim().to_string());
-        }
-    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-
-    Ok(shortcuts)
+#[allow(dead_code)]
+pub struct AppPaths {
+    pub data_dir: String,
+    pub state_dir: String,
+    pub log_file: String,
+    pub shortcuts_file: String,
 }
 
-
-pub fn save_shortcuts_to_file(map: &HashMap<String, String>) -> std::io::Result<()> {
-    use std::io::Write;
-
-    let mut file = fs::File::create("/home/ido/learn_rust/shortcuts.txt")?;
-    for (k, v) in map {
-        writeln!(file, "{}:{}", k, v)?;
+pub fn load_shortcuts(path: &Path) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+    if !path.exists() {
+        fs::write(path, "")?;
+        log::info!("✨ Created shortcuts file at {}", path.display());
     }
+    let contents = fs::read_to_string(path)?;
+    let map = contents
+        .lines()
+        .filter_map(|line| line.split_once(':'))
+        .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
+        .collect();
+    Ok(map)
+}
+
+pub fn save_shortcuts_to_file(
+    path: &Path,
+    shortcuts: &HashMap<String, String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let data: String = shortcuts
+        .iter()
+        .map(|(k, v)| format!("{}:{}\n", k, v))
+        .collect();
+    fs::write(path, data)?;
+    log::info!("💾 Shortcuts saved to {}", path.display());
     Ok(())
 }
