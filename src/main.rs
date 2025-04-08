@@ -1,10 +1,10 @@
 use simplelog::*;
 use std::{
-    fs::{self, File},
+    fs::File,
     sync::{atomic::AtomicBool, Arc, Mutex},
     thread,
 };
-use directories::ProjectDirs;
+
 
 mod config;
 mod expander;
@@ -12,14 +12,7 @@ mod gui;
 mod listener;
 
 fn main() -> Result<(), eframe::Error> {
-    let proj_dirs = ProjectDirs::from("com", "YourName", "TextExpander")
-        .expect("Couldn't get project directory.");
-
-    let data_dir = proj_dirs.data_local_dir();
-    let state_dir = proj_dirs.state_dir().expect("Failed to get state_dir");
-
-    fs::create_dir_all(data_dir).expect("Failed to create data dir");
-    fs::create_dir_all(state_dir).expect("Failed to create state dir");
+    let (data_dir, state_dir) = config::setup_paths();
 
     let log_path = state_dir.join("text_expander.log");
     CombinedLogger::init(vec![WriteLogger::new(
