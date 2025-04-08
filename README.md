@@ -26,3 +26,54 @@ A lightweight desktop tool that lets you type shortcuts and automatically expand
    git clone https://github.com/your-username/text_expander.git
    cd text_expander
 
+2. **Download the Linux release zip**
+
+    Find the latest zip file from the Releases section
+
+3. **Run the install script**
+
+4. **Open your app menu and launch Text Expander**
+
+## 🪟 Windows
+
+1. **Download** `text_expander_windows.zip` from the [Releases](https://github.com/idofriedler/text-expander/releases)
+
+2. **Extract** the archive anywhere (e.g., Desktop or Program Files)
+
+3. **Double-click** `install.bat`
+
+4. A desktop shortcut will be created. Run **Text Expander** from there.
+
+---
+
+## 📁 How It Works
+
+- Define shortcuts using the GUI (`Shortcut → Expansion`)
+
+- Type your shortcut and press **Tab**
+
+- The shortcut is deleted and replaced with your defined expansion
+
+- All shortcuts are stored in a file (`shortcuts.txt`) under your local data directory
+
+---
+
+## 🔧 Built With
+
+- [Rust](https://www.rust-lang.org/)
+
+- `eframe` + `egui` for GUI
+
+- `rdev` for keyboard input simulation
+
+- `simplelog` for logging
+
+---
+
+## 📄 License
+
+No license provided yet. This is an experimental project. You're welcome to try it out, but again — **no guarantees!**Enjoy using Text Expander! 😊
+
+
+
+
